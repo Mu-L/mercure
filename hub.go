@@ -333,7 +333,7 @@ func NewHub(ctx context.Context, options ...Option) (*Hub, error) {
 	}
 
 	if opt.topicSelectorStore == nil {
-		tss, err := NewTopicSelectorStoreCache(DefaultTopicSelectorStoreCacheMaxEntriesPerShard, DefaultTopicSelectorStoreCacheShardCount)
+		tss, err := NewTopicSelectorStore(DefaultTopicSelectorStoreCacheSize)
 		if err != nil {
 			return nil, err
 		}

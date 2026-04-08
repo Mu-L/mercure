@@ -364,7 +364,7 @@ func TestWithSubscribeDisabled(t *testing.T) {
 func createDummy(tb testing.TB, options ...Option) *Hub {
 	tb.Helper()
 
-	tss, err := NewTopicSelectorStoreCache(0, 0)
+	tss, err := NewTopicSelectorStore(0)
 	require.NoError(tb, err)
 
 	options = append(

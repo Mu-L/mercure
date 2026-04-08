@@ -66,8 +66,12 @@ type JWTConfig struct {
 }
 
 type TopicSelectorCacheConfig struct {
-	MaxEntriesPerShard int    `json:"max_entries_per_shard,omitempty"`
-	ShardCount         uint64 `json:"shard_count,omitempty"`
+	// Deprecated: use Size instead.
+	MaxEntriesPerShard int `json:"max_entries_per_shard,omitempty"`
+	// Deprecated: no longer used.
+	ShardCount uint64 `json:"shard_count,omitempty"`
+	// Size is the maximum number of entries in the cache.
+	Size int `json:"size,omitempty"`
 }
 
 // Mercure implements a Mercure hub as a Caddy module. Mercure is a protocol allowing to push data updates to web browsers and other HTTP clients in a convenient, fast, reliable and battery-efficient way.
@@ -193,25 +197,28 @@ func (m *Mercure) Provision(ctx caddy.Context) (err error) { //nolint:funlen,goc
 		return err
 	}
 
-	maxEntriesPerShard := mercure.DefaultTopicSelectorStoreCacheMaxEntriesPerShard
-	shardCount := mercure.DefaultTopicSelectorStoreCacheShardCount
+	cacheSize := mercure.DefaultTopicSelectorStoreCacheSize
 
 	if m.TopicSelectorCache != nil {
-		maxEntriesPerShard = m.TopicSelectorCache.MaxEntriesPerShard
-		shardCount = m.TopicSelectorCache.ShardCount
-	}
+		switch {
+		case m.TopicSelectorCache.Size > 0:
+			cacheSize = m.TopicSelectorCache.Size
+		case m.TopicSelectorCache.MaxEntriesPerShard > 0:
+			// Backward compat: convert old per-shard config
+			shardCount := m.TopicSelectorCache.ShardCount
+			if shardCount == 0 {
+				shardCount = 256
+			}
 
-	if shardCount == 0 {
-		shardCount = mercure.DefaultTopicSelectorStoreCacheShardCount
-	}
-
-	var tss *mercure.TopicSelectorStore
-	if maxEntriesPerShard < 0 {
-		tss = &mercure.TopicSelectorStore{}
-	} else {
-		if tss, err = mercure.NewTopicSelectorStoreCache(maxEntriesPerShard, shardCount); err != nil {
-			return err
+			cacheSize = m.TopicSelectorCache.MaxEntriesPerShard * int(shardCount)
+		case m.TopicSelectorCache.MaxEntriesPerShard < 0:
+			cacheSize = 0
 		}
+	}
+
+	tss, err := mercure.NewTopicSelectorStore(cacheSize)
+	if err != nil {
+		return err
 	}
 
 	ctx = ctx.WithValue(SubscriptionsContextKey, m.Subscriptions)
@@ -497,17 +504,12 @@ func (m *Mercure) UnmarshalCaddyfile(d *caddyfile.Dispenser) (err error) { //nol
 					return d.ArgErr()
 				}
 
-				maxEntriesPerShard, err := strconv.Atoi(d.Val())
+				size, err := strconv.Atoi(d.Val())
 				if err != nil {
 					return d.WrapErr(err)
 				}
 
-				shardCount, err := strconv.ParseUint(d.Val(), 10, 64)
-				if err != nil {
-					return d.WrapErr(err)
-				}
-
-				m.TopicSelectorCache = &TopicSelectorCacheConfig{maxEntriesPerShard, shardCount}
+				m.TopicSelectorCache = &TopicSelectorCacheConfig{Size: size}
 			case "subscriber_list_cache_size":
 				if !d.NextArg() {
 					return d.ArgErr()
