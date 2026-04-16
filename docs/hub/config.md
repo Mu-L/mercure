@@ -79,9 +79,33 @@ The provided `Caddyfile` and Docker image offer convenient environment variables
 | `MERCURE_EXTRA_DIRECTIVES`      | a list of extra [Mercure directives](#directives) inject in the Caddy file, one per line                                                                                                                             |               |
 | `MERCURE_LICENSE`               | the license to use ([only applicable for the Enterprise version](cluster.md))                                                                                                                                        |               |
 
-## HealthCheck
+## Health Check
 
-The Mercure.rocks Hub provides a `/healthz` endpoint that returns a `200 OK` status code if the server is healthy.
+The Mercure.rocks Hub provides transport-aware health check endpoints through the [Caddy admin API](https://caddyserver.com/docs/api) (port 2019 by default):
+
+| Endpoint                           | Description                                                                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /mercure/health/ready`        | Returns `200` if all transports can serve traffic, `503` otherwise. Suitable for readiness probes.                                                   |
+| `GET /mercure/health/live`         | Returns `200` if all transports are fundamentally operational, `503` if any has been unhealthy for an extended period. Suitable for liveness probes. |
+| `GET /mercure/health/{name}/ready` | Per-hub readiness check (when using multiple hubs).                                                                                                  |
+| `GET /mercure/health/{name}/live`  | Per-hub liveness check (when using multiple hubs).                                                                                                   |
+
+For transports that do not support health checking (e.g. Bolt, Local), the endpoints always return `200`.
+
+These endpoints are exposed on the admin API port, not the main HTTP port. The Caddy admin API binds to `localhost:2019` by default for security, so Kubernetes probes should run from inside the container using `exec`:
+
+```yaml
+readinessProbe:
+  exec:
+    command:
+      ["wget", "-q", "--spider", "http://localhost:2019/mercure/health/ready"]
+livenessProbe:
+  exec:
+    command:
+      ["wget", "-q", "--spider", "http://localhost:2019/mercure/health/live"]
+```
+
+Alternatively, you can bind the admin API to all interfaces by adding `admin 0.0.0.0:2019` to the Caddyfile's global options, and then use `httpGet` probes — but that exposes the admin API (including `/stop` and `/load`) on the pod network.
 
 Here is an example of how to use the health check in a Docker Compose file:
 
@@ -91,11 +115,20 @@ services:
   mercure:
     # ...
     healthcheck:
-      test: ["CMD", "wget", "-O-", "https://localhost/healthz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://localhost:2019/mercure/health/ready",
+        ]
       timeout: 5s
       retries: 5
       start_period: 60s
 ```
+
+> **Note:** The legacy `/healthz` endpoint on the main HTTP port is deprecated. It only checks that the Caddy process is running, not the transport connection status.
 
 ## JWT Verification
 
