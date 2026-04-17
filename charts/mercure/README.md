@@ -1,7 +1,7 @@
 <!-- markdownlint-disable -->
 # Mercure Chart for Kubernetes
 
-![Version: 0.22.1](https://img.shields.io/badge/Version-0.22.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.22.1](https://img.shields.io/badge/AppVersion-v0.22.1-informational?style=flat-square)
+![Version: 0.23.0](https://img.shields.io/badge/Version-0.23.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.23.0](https://img.shields.io/badge/AppVersion-v0.23.0-informational?style=flat-square)
 
 A Helm chart to install a Mercure Hub in a Kubernetes cluster. Mercure is a protocol to push data updates to web browsers and other HTTP clients in a convenient, fast, reliable and battery-efficient way.
 
@@ -23,22 +23,21 @@ To install the chart with the release name `my-release`, run the following comma
 | autoscaling | object | Disabled by default. | Autoscaling must not be enabled unless you are using [the High Availability version](https://mercure.rocks/docs/hub/cluster) (see [values.yaml](values.yaml) for details). |
 | caddyExtraConfig | string | `""` | Inject snippet or named-routes options in the Caddyfile |
 | caddyExtraDirectives | string | `""` | Inject extra Caddy directives in the Caddyfile. |
+| deployment.annotations | object | `{}` | Annotations to be added to the deployment. |
 | dev | bool | `false` | Enable the development mode, including the debug UI and the demo. |
 | existingSecret | string | `""` | Allows to pass an existing secret name, the above values will be used if empty. |
 | extraDirectives | string | `""` | Inject extra Mercure directives in the Caddyfile. |
 | extraEnvs | list | `[]` | Additional environment variables to set |
 | fullnameOverride | string | `""` | A name to substitute for the full names of resources. |
 | globalOptions | string | `""` | Inject global options in the Caddyfile. |
-| healthCheck | object | Enabled by default. | Transport-aware health checks exposed via the Caddy admin API. When enabled, readiness and liveness probes use /mercure/health/ready and /mercure/health/live on the admin port instead of /healthz on the HTTP port. |
+| healthCheck | object | `{"enabled":true,"liveness":{"failureThreshold":3,"initialDelaySeconds":15,"periodSeconds":10,"timeoutSeconds":5},"readiness":{"failureThreshold":2,"initialDelaySeconds":5,"periodSeconds":5,"timeoutSeconds":3}}` | Transport-aware health checks exposed via the Caddy admin API. When enabled, readiness and liveness probes use /mercure/health/ready and /mercure/health/live on the admin port instead of /healthz on the HTTP port. |
 | healthCheck.enabled | bool | `true` | Enable transport-aware health checks. |
-| healthCheck.liveness.failureThreshold | int | `3` |  |
-| healthCheck.liveness.initialDelaySeconds | int | `15` |  |
-| healthCheck.liveness.periodSeconds | int | `10` |  |
-| healthCheck.liveness.timeoutSeconds | int | `5` |  |
-| healthCheck.readiness.failureThreshold | int | `2` |  |
-| healthCheck.readiness.initialDelaySeconds | int | `5` |  |
-| healthCheck.readiness.periodSeconds | int | `5` |  |
-| healthCheck.readiness.timeoutSeconds | int | `3` |  |
+| httpRoute | object | `{"annotations":{},"enabled":false,"hostnames":["mercure-example.local"],"parentRefs":[{"name":"gateway","sectionName":"http"}],"rules":[]}` | Expose the service via gateway-api HTTPRoute Requires Gateway API resources and suitable controller installed within the cluster (see: https://gateway-api.sigs.k8s.io/guides/) |
+| httpRoute.annotations | object | `{}` | HTTPRoute annotations. |
+| httpRoute.enabled | bool | `false` | HTTPRoute enabled. |
+| httpRoute.hostnames | list | `["mercure-example.local"]` | Hostnames matching HTTP header. |
+| httpRoute.parentRefs | list | `[{"name":"gateway","sectionName":"http"}]` | Which Gateways this Route is attached to. |
+| httpRoute.rules | list | See [values.yaml](values.yaml). | List of rules and filters applied. When empty, a default rule routing all traffic to the service is created. |
 | image.pullPolicy | string | `"IfNotPresent"` | [Image pull policy](https://kubernetes.io/docs/concepts/containers/images/#updating-images) for updating already existing images on a node. |
 | image.repository | string | `"dunglas/mercure"` | Name of the image repository to pull the container image from. |
 | image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
@@ -64,6 +63,7 @@ To install the chart with the release name `my-release`, run the following comma
 | persistence.existingClaim | string | `""` | If defined, PVC must be created manually before volume will be bound |
 | persistence.storageClass | string | `""` | Mercure Data Persistent Volume Storage Class. If defined, `storageClassName: <storageClass>` If set to `"-"``, `storageClassName: ""``, which disables dynamic provisioning. If undefined (the default) or set to `null`, no `storageClassName` spec is set, choosing the default provisioner. |
 | podAnnotations | object | `{}` | Annotations to be added to pods. |
+| podLabels | object | `{}` | Extra labels to be added to pods. |
 | podSecurityContext | object | `{}` | Pod [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context) for details. |
 | publisherJwtAlg | string | `"HS256"` | The JWT algorithm to use for publishers. |
 | publisherJwtKey | string | `""` | The JWT key to use for publishers, a random key will be generated if empty. |
@@ -76,6 +76,7 @@ To install the chart with the release name `my-release`, run the following comma
 | service.targetPort | int | `80` | Service target port. |
 | service.type | string | `"ClusterIP"` | Kubernetes [service type](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types). |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
+| serviceAccount.automount | bool | `true` | Automatically mount a ServiceAccount's API credentials? |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template. |
 | subscriberJwtAlg | string | `"HS256"` | The JWT algorithm to use for subscribers. |
