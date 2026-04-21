@@ -1,7 +1,7 @@
 <!-- markdownlint-disable -->
 # Mercure Chart for Kubernetes
 
-![Version: 0.23.0](https://img.shields.io/badge/Version-0.23.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.23.0](https://img.shields.io/badge/AppVersion-v0.23.0-informational?style=flat-square)
+![Version: 0.23.1](https://img.shields.io/badge/Version-0.23.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.23.1](https://img.shields.io/badge/AppVersion-v0.23.1-informational?style=flat-square)
 
 A Helm chart to install a Mercure Hub in a Kubernetes cluster. Mercure is a protocol to push data updates to web browsers and other HTTP clients in a convenient, fast, reliable and battery-efficient way.
 
@@ -13,6 +13,10 @@ To install the chart with the release name `my-release`, run the following comma
 
     helm repo add mercure https://charts.mercure.rocks
     helm install my-release mercure/mercure
+
+## Requirements
+
+Kubernetes: `>=1.23.0-0`
 
 ## Values
 
@@ -53,7 +57,8 @@ To install the chart with the release name `my-release`, run the following comma
 | metrics.serviceMonitor.enabled | bool | `false` | Whether to create a ServiceMonitor for Prometheus Operator. |
 | metrics.serviceMonitor.honorLabels | bool | `false` | Specify honorLabels parameter to add the scrape endpoint |
 | metrics.serviceMonitor.interval | string | `"15s"` | The interval to use for the ServiceMonitor to scrape the metrics. |
-| metrics.serviceMonitor.relabelings | list | `[]` | RelabelConfigs to apply to samples before scraping |
+| metrics.serviceMonitor.metricRelabelings | list | `[]` | RelabelConfigs to apply to samples before ingestion (sample relabeling). |
+| metrics.serviceMonitor.relabelings | list | `[]` | RelabelConfigs to apply to samples before scraping (target relabeling). |
 | metrics.serviceMonitor.scrapeTimeout | string | `""` | Timeout after which the scrape is ended |
 | metrics.serviceMonitor.selector | object | `{}` | Additional labels that can be used so ServiceMonitor will be discovered by Prometheus |
 | nameOverride | string | `""` | A name in place of the chart name for `app:` labels. |
