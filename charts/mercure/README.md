@@ -1,7 +1,7 @@
 <!-- markdownlint-disable -->
 # Mercure Chart for Kubernetes
 
-![Version: 0.23.1](https://img.shields.io/badge/Version-0.23.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.23.1](https://img.shields.io/badge/AppVersion-v0.23.1-informational?style=flat-square)
+![Version: 0.23.2](https://img.shields.io/badge/Version-0.23.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.23.2](https://img.shields.io/badge/AppVersion-v0.23.2-informational?style=flat-square)
 
 A Helm chart to install a Mercure Hub in a Kubernetes cluster. Mercure is a protocol to push data updates to web browsers and other HTTP clients in a convenient, fast, reliable and battery-efficient way.
 
@@ -70,6 +70,7 @@ Kubernetes: `>=1.23.0-0`
 | podAnnotations | object | `{}` | Annotations to be added to pods. |
 | podLabels | object | `{}` | Extra labels to be added to pods. |
 | podSecurityContext | object | `{}` | Pod [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context) for details. |
+| progressDeadlineSeconds | int | `1800` | Deployment `spec.progressDeadlineSeconds`. A rolling update of a hub with live SSE subscribers can legitimately spend up to `terminationGracePeriodSeconds` on each pod while the old replica drains — well above the k8s default of 600s. Too-low values make `helm upgrade --wait` (and similar CI gates) fail with `ProgressDeadlineExceeded` even though the rollout is healthy. Default covers a 2-pod rolling update with the defaults above; for larger `replicaCount`, scale up accordingly (roughly `replicaCount × (terminationGracePeriodSeconds + minReadySeconds)` plus a safety margin). Only applied when `updateStrategy.type` is `RollingUpdate`. |
 | publisherJwtAlg | string | `"HS256"` | The JWT algorithm to use for publishers. |
 | publisherJwtKey | string | `""` | The JWT key to use for publishers, a random key will be generated if empty. |
 | replicaCount | int | `1` | The number of replicas (pods) to launch, must be 1 unless you are using [the High Availability version](https://mercure.rocks/docs/hub/cluster). |
@@ -86,6 +87,7 @@ Kubernetes: `>=1.23.0-0`
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template. |
 | subscriberJwtAlg | string | `"HS256"` | The JWT algorithm to use for subscribers. |
 | subscriberJwtKey | string | `""` | The JWT key to use for subscribers, a random key will be generated if empty. |
+| terminationGracePeriodSeconds | int | `660` | Pod terminationGracePeriodSeconds. Must be >= `write_timeout` plus a margin so the hub's graceful SSE drain (subscribers close at their own write deadline) finishes before k8s SIGKILLs the pod. Default matches Mercure's DefaultWriteTimeout (600s) plus a 60s margin. Only applied when `updateStrategy.type` is `RollingUpdate` — with `Recreate` we intentionally leave k8s to use its default (30s) to minimize the downtime window between old-pod-gone and new-pod-ready. |
 | tolerations | list | `[]` | [Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) for node taints. See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#scheduling) for details. |
 | transportUrl | string | `""` | Deprecated: The URL representation of the transport to use. |
 | updateStrategy | object | `{"type":"RollingUpdate"}` | [Deployment strategy type](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy). Useful to set it to 'Recreate' when using BoltDB transport with persistence. |
