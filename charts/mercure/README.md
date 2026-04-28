@@ -29,6 +29,12 @@ Kubernetes: `>=1.23.0-0`
 | autoscaling.customMetrics | list | `[]` | Additional metrics appended to the HPA `spec.metrics` list (Pods, Object, External metric types). |
 | caddyExtraConfig | string | `""` | Inject snippet or named-routes options in the Caddyfile |
 | caddyExtraDirectives | string | `""` | Inject extra Caddy directives in the Caddyfile. |
+| ciliumNetworkPolicy | object | Disabled by default. | [CiliumNetworkPolicy](https://docs.cilium.io/en/stable/security/policy/) for the hub pods. Use this on Cilium-enabled clusters when you need features that the standard NetworkPolicy spec does not support (FQDN-based egress, L7 rules, explicit deny rules, etc.). Independent of `networkPolicy.enabled` — enable whichever your CNI supports. |
+| ciliumNetworkPolicy.egress | list | `[]` | Allowed outbound traffic. Pass-through to `spec.egress`. The DNS rule below is required when using `toFQDNs`: Cilium learns IPs by inspecting responses, so DNS visibility on `kube-dns` must be allowed first. |
+| ciliumNetworkPolicy.egressDeny | list | `[]` | Explicit outbound deny rules. Pass-through to `spec.egressDeny`. |
+| ciliumNetworkPolicy.enabled | bool | `false` | Enable the CiliumNetworkPolicy. Requires the `cilium.io/v2` CRDs to be installed in the cluster. |
+| ciliumNetworkPolicy.ingress | list | `[]` | Allowed inbound traffic. Pass-through to `spec.ingress`. |
+| ciliumNetworkPolicy.ingressDeny | list | `[]` | Explicit inbound deny rules. Pass-through to `spec.ingressDeny`. |
 | deployment.annotations | object | `{}` | Annotations to be added to the deployment. |
 | dev | bool | `false` | Enable the development mode, including the debug UI and the demo. |
 | existingSecret | string | `""` | Allows to pass an existing secret name, the above values will be used if empty. |
@@ -64,6 +70,11 @@ Kubernetes: `>=1.23.0-0`
 | metrics.serviceMonitor.scrapeTimeout | string | `""` | Timeout after which the scrape is ended |
 | metrics.serviceMonitor.selector | object | `{}` | Additional labels that can be used so ServiceMonitor will be discovered by Prometheus |
 | nameOverride | string | `""` | A name in place of the chart name for `app:` labels. |
+| networkPolicy | object | Disabled by default. | [NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) for the hub pods. When enabled with no ingress/egress rules, all traffic to/from the hub pods is denied. Supply rules to allow what you need. |
+| networkPolicy.egress | list | `[]` | Egress rules (allowed outbound traffic). Pass-through to NetworkPolicy `spec.egress`. Allow at least DNS (UDP/TCP 53 to kube-system) plus the transport backend port. |
+| networkPolicy.enabled | bool | `false` | Enable the NetworkPolicy. |
+| networkPolicy.ingress | list | `[]` | Ingress rules (allowed inbound traffic). Pass-through to NetworkPolicy `spec.ingress`. With `policyTypes: [Ingress]` and `ingress: []`, all inbound traffic is denied. |
+| networkPolicy.policyTypes | list | `[]` | `policyTypes` for the NetworkPolicy. The chart always renders both `ingress` and `egress` (defaulting to empty lists), so Kubernetes infers `policyTypes: [Ingress, Egress]`. Override (e.g. to `[Ingress]`) to opt out of egress restrictions. |
 | nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) configuration. |
 | persistence | object | `{"accessMode":"ReadWriteOnce","enabled":false,"existingClaim":"","size":"1Gi","storageClass":""}` | Enable persistence using [Persistent Volume Claims](http://kubernetes.io/docs/user-guide/persistent-volumes/), only useful if you the BoltDB transport. |
 | persistence.accessMode | string | `"ReadWriteOnce"` | A manually managed Persistent Volume and Claim. Requires `persistence.enabled: true` If defined, PVC must be created manually before volume will be bound. |
