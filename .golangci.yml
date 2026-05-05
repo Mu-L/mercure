@@ -16,6 +16,7 @@ linters:
     - errcheck
     - exhaustruct
     - forcetypeassert
+    - gomodguard
     - intrange
     - lll
     - mnd
@@ -38,6 +39,7 @@ linters:
       - std-error-handling
     rules:
       - linters:
+          - gosec
           - funlen
           - gochecknoglobals
           - goconst
